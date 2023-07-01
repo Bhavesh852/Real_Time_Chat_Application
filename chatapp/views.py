@@ -116,8 +116,35 @@ def suggestFriend(request, user_id):
     with open(file, 'rb') as fp:
         json_data = json.loads(fp.read())
     
-    data = json.dumps(json_data)
-    return HttpResponse(data)
+    data = json_data['users']
+    input_user = None
+    for ind, user in enumerate(data):
+        if user['id'] == user_id:
+            input_user = data.pop(ind)
+            break
+    
+    input_interest_keys = input_user['interests'].keys()
+
+    extract_data = []
+    for user in data:
+        for interest in input_interest_keys:
+            if interest not in user['interests']:
+                break
+        else:
+            extract_data.append(user)
+    
+    filter_data = []
+    for user in extract_data:
+        maxi = 0
+        for key in input_interest_keys:
+            maxi += user['interests'][key]
+        
+        user['score'] = maxi
+        filter_data.append(user)
+
+    result_data = sorted(filter_data, key=itemgetter('score'), reverse=True)
+
+    return JsonResponse({"Suggested Friends" : result_data[:5]}, status=status.HTTP_200_OK)
 
 
 
